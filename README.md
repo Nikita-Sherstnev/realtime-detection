@@ -37,7 +37,8 @@ cd *repo*/server
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
-python -m app
+docker run -d -p 6379:6379 --name realtime-redis redis 
+python -m server
 ```
 
 Endpoints:
