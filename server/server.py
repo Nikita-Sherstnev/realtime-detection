@@ -39,6 +39,9 @@ class SocketHandler(websocket.WebSocketHandler):
         self._store = redis.Redis()
         self._prev_image_id = None
 
+    def check_origin(self, origin):
+        return True
+
     def on_message(self, message):
         """ Retrieve image ID from database until different from last ID,
         then retrieve image, de-serialize, encode and send to client. """
@@ -52,7 +55,6 @@ class SocketHandler(websocket.WebSocketHandler):
         image = self._store.get('image')
         image = base64.b64encode(image)
         self.write_message(image)
-        print(image_id)
 
 app = web.Application([
     (r'/', IndexHandler),
