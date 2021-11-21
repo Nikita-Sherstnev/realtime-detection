@@ -7,7 +7,7 @@ from tornado import websocket, web, ioloop
 
 from recorder import create_videostream
 
-MAX_FPS = 24
+MAX_FPS = 100
 
 class IndexHandler(web.RequestHandler):
     def set_default_headers(self):
@@ -67,9 +67,10 @@ def create_app():
     ioloop.IOLoop.instance().start()
 
 if __name__ == '__main__':
-    pool = Pool(processes=2)
-    stream = pool.apply_async(create_app)
-    server = pool.apply_async(create_videostream)
+    create_app()
+    # pool = Pool(processes=2)
+    # stream = pool.apply_async(create_app)
+    # server = pool.apply_async(create_videostream)
 
-    pool.close()
-    pool.join()
+    # pool.close()
+    # pool.join()
