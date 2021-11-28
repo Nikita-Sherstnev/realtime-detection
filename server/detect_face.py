@@ -67,7 +67,6 @@ def show_results(img, xywh, conf, landmarks, class_num):
     return img
 
 
-
 def detect_one(model, orgimg, device):
     # Load model
     img_size = 640
@@ -109,7 +108,7 @@ def detect_one(model, orgimg, device):
     # print('img.shape: ', img.shape)
     # print('orgimg.shape: ', orgimg.shape)
 
-    # # Process detections
+    # Process detections
     for i, det in enumerate(pred):  # detections per image
         gn = torch.tensor(orgimg.shape)[[1, 0, 1, 0]].to(device)  # normalization gain whwh
         gn_lks = torch.tensor(orgimg.shape)[[1, 0, 1, 0, 1, 0, 1, 0, 1, 0]].to(device)  # normalization gain landmarks
@@ -130,4 +129,4 @@ def detect_one(model, orgimg, device):
                 class_num = det[j, 15].cpu().numpy()
                 orgimg = show_results(orgimg, xywh, conf, landmarks, class_num)
 
-    return orgimg
+    return orgimg, det[:, :4]

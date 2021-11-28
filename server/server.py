@@ -1,5 +1,6 @@
 import base64
 import time
+import json
 from multiprocessing import Pool
 
 import redis
@@ -53,6 +54,9 @@ class SocketHandler(websocket.WebSocketHandler):
                 break
         self._prev_image_id = image_id
         image = self._store.get('image')
+        clients = self._store.get('coords')
+        print(json.loads(clients))
+        # TODO send coords as json
         image = base64.b64encode(image)
         self.write_message(image)
 

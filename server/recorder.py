@@ -3,6 +3,7 @@ import os
 import io
 import sys
 import time
+import json
 import random
 import base64
 import struct
@@ -27,7 +28,7 @@ CUR_SLEEP = 0.1
 
 def create_videostream():
     while True:
-        cap = cv2.VideoCapture('bus.avi')
+        cap = cv2.VideoCapture('screen.jpg')
         if cap.isOpened():
             break
         print(f'not opened, sleeping {CUR_SLEEP}s')
@@ -64,19 +65,19 @@ def create_videostream():
             continue
 
         s = time.time()
-        image = detect_one(model, orgimg, device)
-
+        image, coords = detect_one(model, orgimg, device)
+        print(coords.tolist())
         f = time.time()
         print(f-s)
 
         clients = list()
 
-        # for idx, coord in enumerate(coords):
-            # clients.append({'id': idx, 'coords': coord.tolist(), 'datetime': random_date("1/1/2018 1:30 PM", "1/1/2022 4:50 AM", random.random()), 'rating': random.uniform(1, 5)})
+        for idx, coord in enumerate(coords):
+            clients.append({'id': idx, 'coords': coord.tolist(), 'datetime': random_date("1/1/2018 1:30 PM", "1/1/2022 4:50 AM", random.random()), 'rating': random.uniform(1, 5)})
 
         _, image = cv2.imencode('.jpg', image)
 
-        # store.set('coords', np.array(clients).tobytes())
+        store.set('coords', json.dumps(clients))
         store.set('image', np.array(image).tobytes())
         store.set('image_id', os.urandom(4))
         print(count)

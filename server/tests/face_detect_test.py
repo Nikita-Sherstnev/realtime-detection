@@ -1,0 +1,18 @@
+import cv2
+import torch
+
+from detect_face import load_model, detect_one
+
+
+class TestFaceDetect:
+    def test_face_detect(self):
+        weights = 'weights/yolov5n-0.5.pt'
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        model = load_model(weights, device)
+
+        img = cv2.imread('tests/assets/screen.jpg')
+
+        image, coords = detect_one(model, img, device)
+        expected = torch.Tensor([[899., 170., 943., 222.],[87., 425., 161., 494.]]).to(device)
+        assert torch.equal(coords, expected)
+        
