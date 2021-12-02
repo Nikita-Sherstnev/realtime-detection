@@ -12,7 +12,7 @@ class TestFaceDetect:
 
         img = cv2.imread('tests/assets/screen.jpg')
 
-        image, coords = detect_one(model, img, device)
+        image, coords = detect_one(model, img, device) # coords in format [x0, y0, x1, y1]
         expected = torch.Tensor([[899., 170., 943., 222.],[87., 425., 161., 494.]]).to(device)
         assert torch.equal(coords, expected)
         
