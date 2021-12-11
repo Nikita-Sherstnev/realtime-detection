@@ -1,5 +1,6 @@
 import base64
 import time
+import json
 from multiprocessing import Pool
 
 import redis
@@ -7,7 +8,7 @@ from tornado import websocket, web, ioloop
 
 from recorder import create_videostream
 
-MAX_FPS = 24
+MAX_FPS = 100
 
 class IndexHandler(web.RequestHandler):
     def set_default_headers(self):
@@ -53,6 +54,9 @@ class SocketHandler(websocket.WebSocketHandler):
                 break
         self._prev_image_id = image_id
         image = self._store.get('image')
+        clients = self._store.get('coords')
+        print(json.loads(clients))
+        # TODO send coords as json
         image = base64.b64encode(image)
         self.write_message(image)
 
@@ -67,9 +71,10 @@ def create_app():
     ioloop.IOLoop.instance().start()
 
 if __name__ == '__main__':
-    pool = Pool(processes=2)
-    stream = pool.apply_async(create_app)
-    server = pool.apply_async(create_videostream)
+    create_app()
+    # pool = Pool(processes=2)
+    # stream = pool.apply_async(create_app)
+    # server = pool.apply_async(create_videostream)
 
-    pool.close()
-    pool.join()
+    # pool.close()
+    # pool.join()
