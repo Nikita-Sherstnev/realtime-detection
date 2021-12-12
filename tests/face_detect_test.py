@@ -6,7 +6,7 @@ from detect_face import load_model, detect_one
 
 class TestFaceDetect:
     def test_face_detect(self):
-        weights = 'weights/yolov5n-0.5.pt'
+        weights = 'yolov5_face/weights/yolov5n-0.5.pt'
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         model = load_model(weights, device)
 

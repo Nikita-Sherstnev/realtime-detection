@@ -28,7 +28,7 @@ CUR_SLEEP = 0.1
 
 def create_videostream():
     while True:
-        cap = cv2.VideoCapture('screen.jpg')
+        cap = cv2.VideoCapture('bus.avi')
         if cap.isOpened():
             break
         print(f'not opened, sleeping {CUR_SLEEP}s')
@@ -49,7 +49,7 @@ def create_videostream():
         cap.set(4, HEIGHT)
 
     # Init model
-    weights = 'weights/yolov5n-0.5.pt'
+    weights = 'yolov5_face/weights/yolov5n-0.5.pt'
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model = load_model(weights, device)
     # Repeatedly capture current image, encode it, convert it to bytes and push

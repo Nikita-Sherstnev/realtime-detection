@@ -33,6 +33,7 @@ sudo apt-get update
 sudo apt-get install -y software-properties-common python3.9 python3-pip
 
 git clone git@github.com:Nikita-Sherstnev/*repo*.git
+git submodule update --init
 cd *repo*/server
 python3 -m venv .venv
 source .venv/bin/activate
