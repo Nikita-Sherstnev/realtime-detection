@@ -1,6 +1,7 @@
+# -*- coding: UTF-8 -*-
+import argparse
 import time
 from pathlib import Path
-import sys
 
 import cv2
 import torch
@@ -8,13 +9,13 @@ import torch.backends.cudnn as cudnn
 from numpy import random
 import copy
 
-from yolov5_face.models.experimental import attempt_load
-from yolov5_face.utils.datasets import letterbox
-from yolov5_face.utils.general import check_img_size, non_max_suppression_face, apply_classifier, scale_coords, xyxy2xywh, \
+from models.experimental import attempt_load
+from utils.datasets import letterbox
+from utils.general import check_img_size, non_max_suppression_face, apply_classifier, scale_coords, xyxy2xywh, \
     strip_optimizer, set_logging, increment_path
-from yolov5_face.utils.plots import plot_one_box
-from yolov5_face.utils.torch_utils import select_device, load_classifier, time_synchronized
-print('all fine')
+from utils.plots import plot_one_box
+from utils.torch_utils import select_device, load_classifier, time_synchronized
+
 
 def load_model(weights, device):
     model = attempt_load(weights, map_location=device)  # load FP32 model
@@ -68,12 +69,14 @@ def show_results(img, xywh, conf, landmarks, class_num):
     return img
 
 
-def detect_one(model, orgimg, device):
+
+def detect_one(model, image_path, device):
     # Load model
-    img_size = 640
+    img_size = 800
     conf_thres = 0.3
     iou_thres = 0.5
 
+    orgimg = cv2.imread(image_path)  # BGR
     img0 = copy.deepcopy(orgimg)
     assert orgimg is not None, 'Image Not Found ' + image_path
     h0, w0 = orgimg.shape[:2]  # orig hw
@@ -99,15 +102,13 @@ def detect_one(model, orgimg, device):
 
     # Inference
     t1 = time_synchronized()
-    dt = t1 - t0
-    # print(dt) 
     pred = model(img)[0]
 
     # Apply NMS
     pred = non_max_suppression_face(pred, conf_thres, iou_thres)
 
-    # print('img.shape: ', img.shape)
-    # print('orgimg.shape: ', orgimg.shape)
+    print('img.shape: ', img.shape)
+    print('orgimg.shape: ', orgimg.shape)
 
     # Process detections
     for i, det in enumerate(pred):  # detections per image
@@ -130,4 +131,18 @@ def detect_one(model, orgimg, device):
                 class_num = det[j, 15].cpu().numpy()
                 orgimg = show_results(orgimg, xywh, conf, landmarks, class_num)
 
-    return orgimg, det[:, :4]
+    cv2.imwrite('result.jpg', orgimg)
+
+
+
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--weights', nargs='+', type=str, default='runs/train/exp5/weights/last.pt', help='model.pt path(s)')
+    parser.add_argument('--image', type=str, default='data/images/test.jpg', help='source')  # file/folder, 0 for webcam
+    parser.add_argument('--img-size', type=int, default=640, help='inference size (pixels)')
+    opt = parser.parse_args()
+    print(opt)
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    model = load_model(opt.weights, device)
+    detect_one(model, opt.image, device)

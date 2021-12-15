@@ -14,7 +14,16 @@ import numpy as np
 import redis
 import tornado
 from PIL import Image, ImageDraw
-from detect_face import load_model, detect_one
+sys.path.insert(0, './yolov5')
+
+from yolov5.utils.downloads import attempt_download
+from yolov5.utils.torch_utils import select_device
+from yolov5.models.common import DetectMultiBackend
+
+from deep_sort_pytorch.utils.parser import get_config
+from deep_sort_pytorch.deep_sort import DeepSort
+# from detect_face import load_model, detect_one
+from track import detect, draw_boxes
 
 
 # Retrieve command line arguments.
@@ -48,12 +57,30 @@ def create_videostream():
     if HEIGHT:
         cap.set(4, HEIGHT)
 
-    # Init model
+    # Init model for faces
     weights = 'yolov5_face/weights/yolov5n-0.5.pt'
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model = load_model(weights, device)
-    # Repeatedly capture current image, encode it, convert it to bytes and push
-    # it to Redis database. Then create unique ID, and push it to database as well.
+    # face_model = load_model(weights, device)
+
+    yolo_weights = 'yolov5s.pt'
+    imgsz = [1280]
+
+    # initialize deepsort
+    deep_sort_weights = 'deep_sort_pytorch/deep_sort/deep/checkpoint/ckpt.t7'
+    cfg = get_config()
+    cfg.merge_from_file("deep_sort_pytorch/configs/deep_sort.yaml")
+    attempt_download(deep_sort_weights, repo='mikel-brostrom/Yolov5_DeepSort_Pytorch')
+    deepsort = DeepSort(cfg.DEEPSORT.REID_CKPT,
+                        max_dist=cfg.DEEPSORT.MAX_DIST, min_confidence=cfg.DEEPSORT.MIN_CONFIDENCE,
+                        max_iou_distance=cfg.DEEPSORT.MAX_IOU_DISTANCE,
+                        max_age=cfg.DEEPSORT.MAX_AGE, n_init=cfg.DEEPSORT.N_INIT, nn_budget=cfg.DEEPSORT.NN_BUDGET,
+                        use_cuda=True)
+
+    # Init model
+    device = select_device(device)
+    model = DetectMultiBackend(yolo_weights, device=device)
+    names = model.module.names if hasattr(model, 'module') else model.names
+
     for count in itertools.count(1):
         _, orgimg = cap.read()
         thres = 0
@@ -64,24 +91,31 @@ def create_videostream():
                 break
             continue
 
-        s = time.time()
-        image, coords = detect_one(model, orgimg, device)
-        print(coords.tolist())
-        f = time.time()
-        print(f-s)
-
-        clients = list()
-
-        for idx, coord in enumerate(coords):
-            clients.append({'id': idx, 'coords': coord.tolist(), 'datetime': random_date("1/1/2018 1:30 PM", "1/1/2022 4:50 AM", random.random()), 'rating': random.uniform(1, 5)})
-
-        _, image = cv2.imencode('.jpg', image)
+        # clients = detect_faces(face_model, orgimg, device)
+        outputs, confs = detect(orgimg, imgsz, count, model, deepsort, device)
+        clients = [out.tolist() for out in outputs]
+        image = draw_boxes(outputs, confs, orgimg, names)
+        _, image = cv2.imencode('.jpg', orgimg)
 
         store.set('coords', json.dumps(clients))
         store.set('image', np.array(image).tobytes())
         store.set('image_id', os.urandom(4))
         print(count)
         # print(clients)
+
+def detect_faces(model, orgimg, device):
+    s = time.time()
+    image, coords = detect_one(model, orgimg, device)
+    print(coords.tolist())
+    f = time.time()
+    print(f-s)
+
+    clients = list()
+
+    for idx, coord in enumerate(coords):
+        clients.append({'id': idx, 'coords': coord.tolist(), 'datetime': random_date("1/1/2018 1:30 PM", "1/1/2022 4:50 AM", random.random()), 'rating': random.uniform(1, 5)})
+
+    return clients
 
 
 def random_date(start, end, prop):
