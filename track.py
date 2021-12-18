@@ -7,8 +7,6 @@ os.environ["VECLIB_MAXIMUM_THREADS"] = "1"
 os.environ["NUMEXPR_NUM_THREADS"] = "1"
 
 import sys
-sys.path.insert(0, './yolov5')
-print(sys.path)
 
 from yolov5.utils.downloads import attempt_download
 from yolov5.models.common import DetectMultiBackend
@@ -39,7 +37,6 @@ def detect(img0, imgsz, frame_idx, model, deepsort, device):
     half = True
     half &= device.type != 'cpu'  # half precision only supported on CUDA
 
-    # Load model
     stride, names, pt, jit, onnx = model.stride, model.names, model.pt, model.jit, model.onnx
     imgsz = check_img_size(imgsz, s=stride)  # check image size
 
@@ -48,14 +45,9 @@ def detect(img0, imgsz, frame_idx, model, deepsort, device):
     if pt:
         model.model.half() if half else model.model.float()
 
-    # Set Dataloader
-    vid_path, vid_writer = None, None
-
     # Dataloader
-    view_img = check_imshow()
     cudnn.benchmark = True  # set True to speed up constant image size inference
     bs = 1  # batch_size
-    vid_path, vid_writer = [None] * bs, [None] * bs
 
     # Get names and colors
     names = model.module.names if hasattr(model, 'module') else model.names

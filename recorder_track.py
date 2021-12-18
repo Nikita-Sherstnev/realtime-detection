@@ -56,12 +56,9 @@ def create_videostream():
     if HEIGHT:
         cap.set(4, HEIGHT)
 
-    # Init model for faces
-    weights = 'yolov5_face/weights/yolov5n-0.5.pt'
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    # face_model = load_model(weights, device)
 
-    yolo_weights = 'yolov5s.pt'
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    yolo_weights = 'yolov5n.pt'
     imgsz = [1280]
 
     # initialize deepsort
