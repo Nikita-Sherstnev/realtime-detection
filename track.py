@@ -1,10 +1,10 @@
 # limit the number of cpus used by high performance libraries
 import os
-os.environ["OMP_NUM_THREADS"] = "1"
-os.environ["OPENBLAS_NUM_THREADS"] = "1"
-os.environ["MKL_NUM_THREADS"] = "1"
-os.environ["VECLIB_MAXIMUM_THREADS"] = "1"
-os.environ["NUMEXPR_NUM_THREADS"] = "1"
+os.environ["OMP_NUM_THREADS"] = "2"
+os.environ["OPENBLAS_NUM_THREADS"] = "2"
+os.environ["MKL_NUM_THREADS"] = "2"
+os.environ["VECLIB_MAXIMUM_THREADS"] = "2"
+os.environ["NUMEXPR_NUM_THREADS"] = "2"
 
 import sys
 
@@ -30,6 +30,7 @@ import numpy as np
 
 
 def detect(img0, imgsz, frame_idx, model, deepsort, device):
+    t0 = time_sync()
     imgsz *= 2 if len(imgsz) == 1 else 1  # expand
     classes = [0] # class 0 is person, 1 is bycicle, 2 is car... 79 is oven
 
@@ -63,28 +64,21 @@ def detect(img0, imgsz, frame_idx, model, deepsort, device):
     img = img.transpose((2, 0, 1))[::-1]  # HWC to CHW, BGR to RGB
     img = np.ascontiguousarray(img)
     
-    t1 = time_sync()
     img = torch.from_numpy(img).to(device)
     img = img.half() if half else img.float()  # uint8 to fp16/32
     img /= 255.0  # 0 - 255 to 0.0 - 1.0
     if img.ndimension() == 3:
         img = img.unsqueeze(0)
 
-    t2 = time_sync()
-    dt[0] += t2 - t1
-
     # Inference
     augment = True
     pred = model(img, augment=augment, visualize=False)
-    t3 = time_sync()
-    dt[1] += t3 - t2
 
     # Apply NMS
     conf_thres = 0.4
     iou_thres = 0.4
     agnostic_nms = True
     pred = non_max_suppression(pred, conf_thres, iou_thres, classes, agnostic_nms, max_det=1000)
-    dt[2] += time_sync() - t3
 
     s = 'image ' # for logger
 
@@ -115,19 +109,15 @@ def detect(img0, imgsz, frame_idx, model, deepsort, device):
         else:
             deepsort.increment_ages()
 
-        # Print time (inference-only)
-        LOGGER.info(f'{s}Done. ({t3 - t2:.3f}s)')
-        
     # Print results
-    t = tuple(x / seen * 1E3 for x in dt)  # speeds per image
-    LOGGER.info(f'Speed: %.1fms pre-process, %.1fms inference, %.1fms NMS per image at shape {(1, 3, *imgsz)}' % t)
-
+    print(time_sync()-t0)
     print(outputs)
     return outputs, confs
 
 
 def draw_boxes(outputs, confs, im0, names):
     # draw boxes for visualization
+    annotator = Annotator(im0, line_width=2, pil=not ascii)
     if len(outputs) > 0:
         for j, (output, conf) in enumerate(zip(outputs, confs)): 
             
@@ -137,6 +127,7 @@ def draw_boxes(outputs, confs, im0, names):
 
             c = int(cls)  # integer class
             label = f'{id} {names[c]} {conf:.2f}'
+            annotator.box_label(bboxes, label, color=colors(c, True))
 
             # to MOT format
             bbox_left = output[0]
@@ -148,10 +139,9 @@ def draw_boxes(outputs, confs, im0, names):
             #     f.write(('%g ' * 10 + '\n') % (frame_idx + 1, id, bbox_left,
             #                                     bbox_top, bbox_w, bbox_h, -1, -1, -1, -1))  # label format
 
-        annotator = Annotator(im0, line_width=2, pil=not ascii)
-        annotator.box_label(bboxes, label, color=colors(c, True))
         im0 = annotator.result()
-        return im0
+    
+    return im0
 
 
 def detection():

@@ -15,7 +15,6 @@ import redis
 import tornado
 from PIL import Image, ImageDraw
 
-
 from detector import load_model, detect_one
 
 

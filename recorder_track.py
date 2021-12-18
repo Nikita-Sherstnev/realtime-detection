@@ -47,19 +47,16 @@ def create_videostream():
             continue
         CUR_SLEEP = 0.1
 
-    # Create client to the Redis store.
     store = redis.Redis()
 
-    # Set video dimensions, if given.
     if WIDTH:
         cap.set(3, WIDTH)
     if HEIGHT:
         cap.set(4, HEIGHT)
 
-
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    yolo_weights = 'yolov5n.pt'
-    imgsz = [1280]
+    yolo_weights = 'yolov5s.pt'
+    imgsz = [640]
 
     # initialize deepsort
     deep_sort_weights = 'deep_sort_pytorch/deep_sort/deep/checkpoint/ckpt.t7'
@@ -87,31 +84,17 @@ def create_videostream():
                 break
             continue
 
-        # clients = detect_faces(face_model, orgimg, device)
         outputs, confs = detect(orgimg, imgsz, count, model, deepsort, device)
+
         clients = [out.tolist() for out in outputs]
         image = draw_boxes(outputs, confs, orgimg, names)
-        _, image = cv2.imencode('.jpg', orgimg)
+        _, image = cv2.imencode('.jpg', image)
 
         store.set('coords', json.dumps(clients))
         store.set('image', np.array(image).tobytes())
         store.set('image_id', os.urandom(4))
         print(count)
         # print(clients)
-
-def detect_faces(model, orgimg, device):
-    s = time.time()
-    image, coords = detect_one(model, orgimg, device)
-    print(coords.tolist())
-    f = time.time()
-    print(f-s)
-
-    clients = list()
-
-    for idx, coord in enumerate(coords):
-        clients.append({'id': idx, 'coords': coord.tolist(), 'datetime': random_date("1/1/2018 1:30 PM", "1/1/2022 4:50 AM", random.random()), 'rating': random.uniform(1, 5)})
-
-    return clients
 
 
 def random_date(start, end, prop):
