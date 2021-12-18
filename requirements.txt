@@ -24,3 +24,4 @@ easydict
 
 redis==3.5.3
 tornado==6.1
+thop

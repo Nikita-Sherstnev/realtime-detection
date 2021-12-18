@@ -1,3 +1,6 @@
 [submodule "yolov5"]
 	path = yolov5
 	url = https://github.com/ultralytics/yolov5.git
+[submodule "yolov5_face"]
+	path = yolov5_face
+	url = https://github.com/deepcam-cn/yolov5-face.git

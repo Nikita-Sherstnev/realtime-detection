@@ -7,16 +7,16 @@ import json
 import random
 import base64
 import struct
-
+sys.path.insert(0, './yolov5_face')
 import cv2
 import torch
 import numpy as np
 import redis
 import tornado
 from PIL import Image, ImageDraw
-sys.path.insert(0, './yolov5_face')
 
-from detect_face import load_model, detect_one
+
+from detector import load_model, detect_one
 
 
 # Retrieve command line arguments.
