@@ -14,16 +14,9 @@ import numpy as np
 import redis
 import tornado
 from PIL import Image, ImageDraw
-sys.path.insert(0, './yolov5')
+sys.path.insert(0, './yolov5_face')
 
-from yolov5.utils.downloads import attempt_download
-from yolov5.utils.torch_utils import select_device
-from yolov5.models.common import DetectMultiBackend
-
-from deep_sort_pytorch.utils.parser import get_config
-from deep_sort_pytorch.deep_sort import DeepSort
-# from detect_face import load_model, detect_one
-from track import detect, draw_boxes
+from detect_face import load_model, detect_one
 
 
 # Retrieve command line arguments.
@@ -60,26 +53,7 @@ def create_videostream():
     # Init model for faces
     weights = 'yolov5_face/weights/yolov5n-0.5.pt'
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    # face_model = load_model(weights, device)
-
-    yolo_weights = 'yolov5s.pt'
-    imgsz = [1280]
-
-    # initialize deepsort
-    deep_sort_weights = 'deep_sort_pytorch/deep_sort/deep/checkpoint/ckpt.t7'
-    cfg = get_config()
-    cfg.merge_from_file("deep_sort_pytorch/configs/deep_sort.yaml")
-    attempt_download(deep_sort_weights, repo='mikel-brostrom/Yolov5_DeepSort_Pytorch')
-    deepsort = DeepSort(cfg.DEEPSORT.REID_CKPT,
-                        max_dist=cfg.DEEPSORT.MAX_DIST, min_confidence=cfg.DEEPSORT.MIN_CONFIDENCE,
-                        max_iou_distance=cfg.DEEPSORT.MAX_IOU_DISTANCE,
-                        max_age=cfg.DEEPSORT.MAX_AGE, n_init=cfg.DEEPSORT.N_INIT, nn_budget=cfg.DEEPSORT.NN_BUDGET,
-                        use_cuda=True)
-
-    # Init model
-    device = select_device(device)
-    model = DetectMultiBackend(yolo_weights, device=device)
-    names = model.module.names if hasattr(model, 'module') else model.names
+    face_model = load_model(weights, device)
 
     for count in itertools.count(1):
         _, orgimg = cap.read()
@@ -91,10 +65,8 @@ def create_videostream():
                 break
             continue
 
-        # clients = detect_faces(face_model, orgimg, device)
-        outputs, confs = detect(orgimg, imgsz, count, model, deepsort, device)
-        clients = [out.tolist() for out in outputs]
-        image = draw_boxes(outputs, confs, orgimg, names)
+        clients = detect_faces(face_model, orgimg, device)
+        
         _, image = cv2.imencode('.jpg', orgimg)
 
         store.set('coords', json.dumps(clients))
