@@ -1,4 +1,4 @@
-# client
+# moscow-no-ticket
 
 ## Project setup
 ```
