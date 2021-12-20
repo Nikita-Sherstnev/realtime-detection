@@ -14,7 +14,7 @@ from yolov5_face.utils.general import check_img_size, non_max_suppression_face, 
     strip_optimizer, set_logging, increment_path
 from yolov5_face.utils.plots import plot_one_box
 from yolov5_face.utils.torch_utils import select_device, load_classifier, time_synchronized
-print('all fine')
+
 
 def load_model(weights, device):
     model = attempt_load(weights, map_location=device)  # load FP32 model

@@ -17,12 +17,9 @@ from PIL import Image, ImageDraw
 
 from detector import load_model, detect_one
 
+WIDTH = None
+HEIGHT = None
 
-# Retrieve command line arguments.
-WIDTH = None if len(sys.argv) <= 1 else int(sys.argv[1])
-HEIGHT = None if len(sys.argv) <= 2 else int(sys.argv[2])
-
-# Create video capture object, retrying until successful.
 MAX_SLEEP = 5.0
 CUR_SLEEP = 0.1
 
@@ -40,29 +37,21 @@ def create_videostream():
             continue
         CUR_SLEEP = 0.1
 
-    # Create client to the Redis store.
     store = redis.Redis()
 
-    # Set video dimensions, if given.
     if WIDTH:
         cap.set(3, WIDTH)
     if HEIGHT:
         cap.set(4, HEIGHT)
 
-    # Init model for faces
     weights = 'yolov5_face/weights/yolov5n-0.5.pt'
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     face_model = load_model(weights, device)
 
     for count in itertools.count(1):
         _, orgimg = cap.read()
-        thres = 0
         if orgimg is None:
             time.sleep(0.5)
-            thres += 1
-            if thres > 10:
-                break
-            continue
 
         clients = detect_faces(face_model, orgimg, device)
         
@@ -71,8 +60,7 @@ def create_videostream():
         store.set('coords', json.dumps(clients))
         store.set('image', np.array(image).tobytes())
         store.set('image_id', os.urandom(4))
-        print(count)
-        # print(clients)
+
 
 def detect_faces(model, orgimg, device):
     s = time.time()

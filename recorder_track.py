@@ -52,24 +52,24 @@ def create_videostream():
     if WIDTH:
         cap.set(3, WIDTH)
     if HEIGHT:
-        cap.set(4, HEIGHT)
+        cap.set(4, HEIGHT) 
+    imgsz = [640]
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     yolo_weights = 'yolov5s.pt'
-    imgsz = [640]
-
-    # initialize deepsort
+    
     deep_sort_weights = 'deep_sort_pytorch/deep_sort/deep/checkpoint/ckpt.t7'
     cfg = get_config()
     cfg.merge_from_file("deep_sort_pytorch/configs/deep_sort.yaml")
     attempt_download(deep_sort_weights, repo='mikel-brostrom/Yolov5_DeepSort_Pytorch')
     deepsort = DeepSort(cfg.DEEPSORT.REID_CKPT,
-                        max_dist=cfg.DEEPSORT.MAX_DIST, min_confidence=cfg.DEEPSORT.MIN_CONFIDENCE,
+                        max_dist=cfg.DEEPSORT.MAX_DIST,
+                        min_confidence=cfg.DEEPSORT.MIN_CONFIDENCE,
                         max_iou_distance=cfg.DEEPSORT.MAX_IOU_DISTANCE,
-                        max_age=cfg.DEEPSORT.MAX_AGE, n_init=cfg.DEEPSORT.N_INIT, nn_budget=cfg.DEEPSORT.NN_BUDGET,
+                        max_age=cfg.DEEPSORT.MAX_AGE,
+                        n_init=cfg.DEEPSORT.N_INIT, nn_budget=cfg.DEEPSORT.NN_BUDGET,
                         use_cuda=True)
 
-    # Init model
     device = select_device(device)
     model = DetectMultiBackend(yolo_weights, device=device)
     names = model.module.names if hasattr(model, 'module') else model.names
@@ -94,7 +94,6 @@ def create_videostream():
         store.set('image', np.array(image).tobytes())
         store.set('image_id', os.urandom(4))
         print(count)
-        # print(clients)
 
 
 def random_date(start, end, prop):
