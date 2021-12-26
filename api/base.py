@@ -57,4 +57,4 @@ class SocketHandler(websocket.WebSocketHandler):
         print(json.loads(clients))
         # TODO send coords as json
         image = base64.b64encode(image)
-        self.write_message(image)
+        self.write_message({'image': image,'coords':clients})
